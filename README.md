@@ -1,1 +1,1 @@
-# SIH2026
+# EarthQuery AI
