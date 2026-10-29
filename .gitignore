@@ -1,0 +1,26 @@
+# Python
+__pycache__/
+*.py[cod]
+.venv/
+venv/
+.env
+.env.*
+!.env.example
+
+# Runtime state and user-provided data
+uploads/*
+!uploads/.gitkeep
+logs/*
+!logs/.gitkeep
+
+# Large sample corpora and historical archives are kept outside this app repo
+Data Sample/
+archived/
+
+# Generated presentation/build artifacts
+presentation-output/
+.ppt-build/
+.codex-finalizer/
+
+# Local tooling
+.DS_Store

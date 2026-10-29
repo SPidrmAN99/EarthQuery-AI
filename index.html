@@ -1,0 +1,1802 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>EarthQuery AI v6</title>
+
+    <link rel="stylesheet"
+          href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
+
+    <style>
+        :root {
+            --bg: #070b0f;
+            --panel: #0a1015;
+            --panel-2: #0d141a;
+            --border: #1d3440;
+            --text: #dce8ed;
+            --muted: #71818a;
+            --accent: #42e6d0;
+            --accent-2: #1ca9b8;
+            --warning: #e7bd50;
+            --map-bg: #11181d;
+        --right-width: 414px;
+        }
+
+        body.light {
+            --bg: #e8edf0;
+            --panel: #f5f7f8;
+            --panel-2: #ffffff;
+            --border: #c8d2d7;
+            --text: #162228;
+            --muted: #64737a;
+            --accent: #087d78;
+            --accent-2: #168fa0;
+            --warning: #9b7410;
+            --map-bg: #dce3e7;
+        }
+
+        * {
+            box-sizing: border-box;
+        }
+
+        html, body {
+            margin: 0;
+            width: 100%;
+            height: 100%;
+            overflow: hidden;
+            background: var(--bg);
+            color: var(--text);
+            font-family: "Segoe UI", Arial, sans-serif;
+        }
+
+        .app {
+            display: grid;
+            grid-template-columns: var(--right-width) minmax(320px, 1fr) 258px;
+            width: 100vw;
+            height: 100vh;
+            background: var(--bg);
+        }
+
+        /* RIGHT WORKSTATION PANEL */
+        .left-panel {
+            min-width: 0;
+            height: 100%;
+            display: flex;
+            flex-direction: column;
+            background: var(--panel);
+            border-left: 1px solid var(--border);
+            position: relative;
+            z-index: 20;
+        }
+
+        .brand {
+            height: 96px;
+            padding: 16px;
+            border-bottom: 1px solid var(--border);
+        }
+
+        .brand-row {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .brand-mark {
+            width: 34px;
+            height: 34px;
+            border: 1px solid var(--accent);
+            display: grid;
+            place-items: center;
+            color: var(--accent);
+            font-size: 13px;
+            letter-spacing: 1px;
+        }
+
+        .brand-title {
+            font-size: 13px;
+            font-weight: 700;
+            letter-spacing: 1px;
+        }
+
+        .brand-sub {
+            margin-top: 4px;
+            color: var(--muted);
+            font-size: 9px;
+            letter-spacing: 1px;
+        }
+
+        .left-content {
+            padding: 14px;
+            overflow-y: auto;
+            flex: 1;
+        }
+
+        .section-label {
+            color: var(--muted);
+            font-size: 9px;
+            letter-spacing: 2px;
+            margin: 16px 0 8px;
+        }
+
+        /* IMAGE PREVIEW */
+        .preview-box {
+            width: 100%;
+            max-height: 300px;
+            overflow-y: auto;
+            overflow-x: hidden;
+            border: 1px solid var(--border);
+            background: var(--panel-2);
+            scrollbar-width: thin;
+            scrollbar-color: var(--accent) var(--panel-2);
+        }
+
+        .preview-box::-webkit-scrollbar {
+            width: 5px;
+        }
+
+        .preview-box::-webkit-scrollbar-thumb {
+            background: var(--accent);
+        }
+
+        .preview-empty {
+            min-height: 120px;
+            display: grid;
+            place-items: center;
+            padding: 12px;
+            color: var(--muted);
+            font-size: 9px;
+            letter-spacing: 1px;
+            text-align: center;
+            cursor: pointer;
+        }
+
+        .preview-item {
+            padding: 8px;
+            border-bottom: 1px solid var(--border);
+        }
+
+        .preview-item:last-child {
+            border-bottom: 0;
+        }
+
+        .preview-image {
+            display: block;
+            width: 100%;
+            max-height: 210px;
+            object-fit: contain;
+            background: #11181d;
+        }
+
+        .preview-name {
+            margin-top: 6px;
+            color: var(--muted);
+            font-size: 8px;
+            line-height: 1.35;
+            overflow-wrap: anywhere;
+        }
+
+        .new-analysis {
+            width: 100%;
+            height: 35px;
+            background: transparent;
+            border: 1px solid var(--border);
+            color: var(--text);
+            text-align: left;
+            padding: 0 12px;
+            font-family: inherit;
+            font-size: 11px;
+            letter-spacing: 1px;
+            cursor: pointer;
+        }
+
+        .new-analysis:hover {
+            border-color: var(--accent);
+            color: var(--accent);
+        }
+
+        .status-box,
+        .support-box,
+        .telemetry-box,
+        .queue-box {
+            border: 1px solid var(--border);
+            background: var(--panel-2);
+        }
+
+        .status-row {
+            display: flex;
+            justify-content: space-between;
+            padding: 7px 9px;
+            border-bottom: 1px solid rgba(128,150,160,.12);
+            font-size: 9px;
+        }
+
+        .status-row:last-child {
+            border-bottom: 0;
+        }
+
+        .status-key {
+            color: var(--muted);
+            letter-spacing: 1px;
+        }
+
+        .online {
+            color: var(--accent);
+        }
+
+        .ready {
+            color: #64dca0;
+        }
+
+        .not-called {
+            color: var(--warning);
+        }
+
+        .queue-item {
+            min-height: 43px;
+            padding: 9px;
+            border-bottom: 1px dashed var(--border);
+            color: var(--muted);
+            font-size: 9px;
+        }
+
+        .queue-item:last-child {
+            border-bottom: 0;
+        }
+
+        .queue-number {
+            color: var(--accent);
+            margin-right: 6px;
+        }
+
+        .support-row {
+            display: flex;
+            justify-content: space-between;
+            padding: 6px 9px;
+            font-size: 9px;
+            border-bottom: 1px solid rgba(128,150,160,.12);
+        }
+
+        .support-row:last-child {
+            border-bottom: 0;
+        }
+
+        .upload-btn {
+            display: block;
+            margin-top: 8px;
+            width: 100%;
+            height: 30px;
+            border: 1px solid var(--border);
+            background: transparent;
+            color: var(--accent);
+            cursor: pointer;
+            font-size: 9px;
+            letter-spacing: 1px;
+        }
+
+        .upload-btn:hover {
+            border-color: var(--accent);
+        }
+
+        #fileInput {
+            display: none;
+        }
+
+        .footer {
+            padding: 12px 14px;
+            border-top: 1px solid var(--border);
+            color: var(--muted);
+            font-size: 8px;
+            line-height: 1.45;
+            letter-spacing: .7px;
+        }
+
+        /* MAP */
+        .map-panel {
+            min-width: 0;
+            min-height: 0;
+            position: relative;
+            background: var(--map-bg);
+        }
+
+        #map {
+            width: 100%;
+            height: 100%;
+        }
+        /* RASTER MAP CONTROLS */
+        .map-top-controls {
+            position: absolute; top: 12px; right: 12px; z-index: 2000;
+            display: flex; align-items: center; gap: 6px; flex-wrap: wrap;
+            max-width: calc(100% - 24px);
+        }
+        .map-image-toggle {
+            height: 34px; padding: 0 10px; border: 1px solid var(--border);
+            background: rgba(7,12,16,.90); color: var(--accent); cursor: pointer;
+            font-family: inherit; font-size: 8px; letter-spacing: 1px;
+        }
+        .map-image-toggle:hover { border-color: var(--accent); }
+        .map-opacity-control {
+            min-width: 190px; height: 34px; padding: 5px 9px;
+            border: 1px solid var(--border); background: rgba(7,12,16,.90);
+            color: var(--text); font-size: 8px; letter-spacing: .8px;
+        }
+        body.light .map-image-toggle,
+        body.light .map-opacity-control { background: rgba(255,255,255,.90); }
+        .map-opacity-row {
+            display: flex; justify-content: space-between; align-items: center; gap: 8px;
+        }
+        .map-opacity-value, .preview-control-value {
+            color: var(--accent); min-width: 30px; text-align: right;
+        }
+        .map-opacity-control input[type="range"] {
+            width: 100px; accent-color: var(--accent); cursor: pointer;
+        }
+
+        /* PREVIEW CONTROLS */
+        .preview-image { cursor: zoom-in; }
+        .preview-control { margin-top: 7px; }
+        .preview-control-row {
+            display: flex; align-items: center; justify-content: space-between;
+            gap: 7px; margin-bottom: 3px; color: var(--muted);
+            font-size: 7px; letter-spacing: .7px;
+        }
+        .preview-control input[type="range"] {
+            width: 100%; height: 12px; margin: 0;
+            accent-color: var(--accent); cursor: pointer;
+        }
+        .zoom-preview-layer {
+            position: fixed; inset: 0; z-index: 9500;
+            pointer-events: none; display: none;
+        }
+        .zoom-preview-layer.open { display: block; }
+        .zoom-preview-image {
+            position: absolute; object-fit: contain; transform-origin: center center;
+            border: 1px solid var(--border); pointer-events: auto;
+            user-select: none; will-change: left, top, width, height, opacity;
+        }
+        .zoom-preview-close {
+            position: absolute; width: 34px; height: 34px;
+            border: 1px solid var(--border); background: rgba(7,12,16,.92);
+            color: var(--text); cursor: pointer; font-size: 18px; line-height: 1;
+            pointer-events: auto; z-index: 2;
+        }
+        .zoom-preview-close:hover { border-color: var(--accent); color: var(--accent); }
+
+        .map-header {
+            position: absolute;
+            top: 12px;
+            left: 58px;
+            z-index: 1000;
+            background: rgba(7, 12, 16, .90);
+            border: 1px solid #20343d;
+            padding: 9px 12px;
+            color: #dbe7eb;
+            font-size: 9px;
+            letter-spacing: 1px;
+            pointer-events: none;
+        }
+
+        body.light .map-header {
+            background: rgba(255,255,255,.90);
+            color: #18262c;
+            border-color: #c4d0d5;
+        }
+
+        .map-status {
+            position: absolute;
+            right: 12px;
+            bottom: 12px;
+            z-index: 1000;
+            background: rgba(7, 12, 16, .90);
+            border: 1px solid #20343d;
+            padding: 8px 10px;
+            color: #93a6ad;
+            font-size: 8px;
+            letter-spacing: .8px;
+            pointer-events: none;
+        }
+
+        body.light .map-status {
+            background: rgba(255,255,255,.90);
+            border-color: #c4d0d5;
+            color: #596b73;
+        }
+
+
+        /* DRAGGABLE MAP / CHAT PARTITION */
+        .resize-handle {
+            position: absolute;
+            top: 0;
+            right: -6px;
+            width: 12px;
+            height: 100%;
+            z-index: 3000;
+            cursor: col-resize;
+            background: rgba(66, 230, 208, 0.04);
+            touch-action: none;
+        }
+
+        .resize-handle::after {
+            content: "";
+            position: absolute;
+            top: 50%;
+            left: 5px;
+            transform: translateY(-50%);
+            width: 2px;
+            height: 54px;
+            background: var(--border);
+            opacity: .75;
+        }
+
+        .resize-handle:hover::after,
+        body.resizing .resize-handle::after {
+            background: var(--accent);
+            opacity: 1;
+        }
+
+        body.resizing {
+            cursor: col-resize;
+            user-select: none;
+        }
+
+        body.resizing .leaflet-container {
+            cursor: col-resize !important;
+        }
+
+        /* LEFT CHAT PANEL */
+        .right-panel {
+            min-width: 0;
+            min-height: 0;
+            height: 100%;
+            display: flex;
+            flex-direction: column;
+            background: var(--panel);
+            border-right: 1px solid var(--border);
+            z-index: 20;
+            position: relative;
+        }
+
+        .chat-header {
+            height: 96px;
+            padding: 14px;
+            border-bottom: 1px solid var(--border);
+        }
+
+        .chat-title {
+            font-size: 12px;
+            font-weight: 700;
+            letter-spacing: 1px;
+        }
+
+        .chat-subtitle {
+            margin-top: 4px;
+            color: var(--muted);
+            font-size: 8px;
+            letter-spacing: 1px;
+        }
+
+        .orchestrator {
+            margin-top: 9px;
+            height: 26px;
+            border: 1px solid var(--border);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 0 9px;
+            color: var(--accent);
+            font-size: 8px;
+            letter-spacing: 1px;
+        }
+
+        .text-size-control {
+            display: flex;
+            align-items: center;
+            gap: 7px;
+            color: var(--muted);
+            font-size: 7px;
+            letter-spacing: .7px;
+        }
+
+        .text-size-control input[type="range"] {
+            width: 85px;
+            height: 12px;
+            margin: 0;
+            accent-color: var(--accent);
+            cursor: pointer;
+        }
+
+        #textSizeValue {
+            color: var(--accent);
+            min-width: 32px;
+            text-align: right;
+        }
+
+        .chat-info {
+            flex: 0 0 auto;
+            margin: 28px 14px 14px;
+            padding: 15px;
+            border: 1px solid var(--border);
+            background: var(--panel-2);
+        }
+
+        .eyebrow {
+            color: var(--accent);
+            font-size: 8px;
+            letter-spacing: 1.5px;
+        }
+
+        .chat-info h1 {
+            margin: 8px 0;
+            font-size: 18px;
+            letter-spacing: 1px;
+        }
+
+        .chat-info p {
+            margin: 0;
+            color: var(--muted);
+            font-size: 9px;
+            line-height: 1.7;
+        }
+
+        .conversation {
+            flex: 1 1 auto;
+            min-height: 0;
+            overflow-y: scroll;
+            overscroll-behavior: contain;
+            scrollbar-width: thin;
+            scrollbar-color: var(--accent) var(--panel-2);
+            padding: 10px 14px;
+        }
+
+        .conversation::-webkit-scrollbar {
+            width: 9px;
+        }
+
+        .conversation::-webkit-scrollbar-track {
+            background: var(--panel-2);
+        }
+
+        .conversation::-webkit-scrollbar-thumb {
+            background: var(--accent);
+            border: 2px solid var(--panel-2);
+        }
+
+        .conversation::-webkit-scrollbar-thumb:hover {
+            background: var(--accent-2);
+        }
+
+        .message {
+            margin: 8px 0;
+            padding: 10px;
+            border: 1px solid var(--border);
+            background: var(--panel-2);
+            color: #f2f7f9;
+            font-size: var(--chat-text-size, 8.5px);
+            line-height: 1.55;
+            white-space: pre-wrap;
+            overflow-wrap: anywhere;
+        }
+
+        body.light .message {
+            background: #ffffff;
+            color: #111c21;
+        }
+
+        .message.user {
+            color: #ffffff;
+        }
+
+        body.light .message.user {
+            color: #111c21;
+        }
+
+        .message.assistant {
+            color: #f2f7f9;
+        }
+
+        body.light .message.assistant {
+            color: #111c21;
+        }
+
+        .message h1,
+        .message h2,
+        .message h3 {
+            margin: 8px 0 6px;
+            color: inherit;
+            line-height: 1.25;
+        }
+
+        .message h1 { font-size: 1.25em; }
+        .message h2 { font-size: 1.15em; }
+        .message h3 { font-size: 1.05em; }
+
+        .message ul {
+            margin: 6px 0 6px 22px;
+            padding: 0;
+        }
+
+        .message li {
+            margin: 3px 0;
+        }
+
+        .message pre {
+            margin: 8px 0;
+            padding: 10px;
+            overflow-x: auto;
+            background: #070b0f;
+            border: 1px solid var(--border);
+            font-size: .88em;
+            line-height: 1.45;
+        }
+
+        body.light .message pre {
+            background: #edf1f3;
+        }
+
+        .message code {
+            font-family: Consolas, "Courier New", monospace;
+            font-size: .9em;
+        }
+
+        .message pre code {
+            font-size: inherit;
+        }
+
+        .message strong {
+            font-weight: 700;
+        }
+
+        .message hr {
+            border: 0;
+            border-top: 1px solid var(--border);
+            margin: 10px 0;
+        }
+
+        .message.notice {
+            color: #e7bd50;
+            border-left: 2px solid #e7bd50;
+            background: var(--panel-2);
+        }
+
+        body.light .message.notice {
+            color: #8a6810;
+        }
+
+        .message.user {
+            border-left: 2px solid var(--accent);
+        }
+
+        .message.system {
+            color: var(--muted);
+        }
+
+        .message.assistant {
+            border-right: 2px solid var(--accent-2);
+        }
+
+        .message.thinking {
+            color: #dce8ed;
+            border-left: 2px solid var(--accent);
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .thinking-dots {
+            display: inline-flex;
+            gap: 3px;
+        }
+
+        .thinking-dots span {
+            width: 4px;
+            height: 4px;
+            border-radius: 50%;
+            background: var(--accent);
+            animation: thinkingPulse 1.2s infinite ease-in-out;
+        }
+
+        .thinking-dots span:nth-child(2) {
+            animation-delay: .15s;
+        }
+
+        .thinking-dots span:nth-child(3) {
+            animation-delay: .3s;
+        }
+
+        @keyframes thinkingPulse {
+            0%, 60%, 100% { opacity: .25; transform: translateY(0); }
+            30% { opacity: 1; transform: translateY(-2px); }
+        }
+
+        .chat-form button:disabled,
+        .chat-form input:disabled {
+            opacity: .45;
+            cursor: not-allowed;
+        }
+
+        .input-area {
+            border-top: 1px solid var(--border);
+            padding: 10px 14px 14px;
+        }
+
+        .input-label {
+            color: var(--accent);
+            font-size: 8px;
+            letter-spacing: 1.3px;
+            margin-bottom: 7px;
+        }
+
+        .chat-form {
+            display: grid;
+            grid-template-columns: 32px minmax(0, 1fr) 34px;
+            gap: 5px;
+        }
+
+        .chat-form input {
+            min-width: 0;
+            height: 34px;
+            border: 1px solid var(--border);
+            background: var(--panel-2);
+            color: var(--text);
+            outline: none;
+            padding: 0 10px;
+            font-family: inherit;
+            font-size: 10px;
+        }
+
+        .chat-form input:focus {
+            border-color: var(--accent);
+        }
+
+        .chat-form button {
+            height: 34px;
+            border: 1px solid var(--border);
+            background: var(--panel-2);
+            color: var(--accent);
+            cursor: pointer;
+        }
+
+        .chat-form button:hover {
+            border-color: var(--accent);
+        }
+
+        .input-note {
+            margin-top: 7px;
+            color: var(--muted);
+            font-size: 7px;
+            letter-spacing: .7px;
+        }
+
+        .theme-button {
+            position: absolute;
+            top: 12px;
+            right: 12px;
+            z-index: 2000;
+            width: 34px;
+            height: 34px;
+            border: 1px solid var(--border);
+            background: rgba(7,12,16,.9);
+            color: var(--accent);
+            cursor: pointer;
+        }
+
+        body.light .theme-button {
+            background: rgba(255,255,255,.9);
+        }
+
+        /* Leaflet attribution remains visible, as required by tile providers. */
+        .leaflet-control-attribution {
+            font-size: 8px;
+        }
+
+        @media (max-width: 1000px) {
+            .app {
+                grid-template-columns: min(340px, 34vw) minmax(320px, 1fr) 220px;
+            }
+        }
+
+        @media (max-width: 760px) {
+            .app {
+                grid-template-columns: 1fr;
+            }
+
+            .left-panel,
+            .right-panel {
+                display: none;
+            }
+        }
+    </style>
+</head>
+
+<body>
+
+<div class="app">
+
+    <!-- RIGHT PANEL -->
+    <aside class="right-panel">
+        <div class="resize-handle" id="resizeHandle" title="Drag to resize chat panel"></div>
+
+        <div class="chat-header">
+            <div class="chat-title">EARTHQUERY CHAT</div>
+            <div class="chat-subtitle">QUERY → AGENTIC PIPELINE → AZURE MODEL</div>
+
+            <div class="orchestrator">
+                <span>ORCHESTRATOR</span>
+                <div class="text-size-control">
+                    <span>TEXT SIZE</span>
+                    <input id="textSizeSlider" type="range"
+                           min="50" max="150" value="100"
+                           aria-label="Chat text size">
+                    <span id="textSizeValue">100%</span>
+                </div>
+            </div>
+        </div>
+
+        <div class="conversation" id="conversation"></div>
+
+        <div class="input-area">
+
+            <div class="input-label">
+                INPUT // 1 OR 2 RASTERS
+            </div>
+
+            <form class="chat-form" id="chatForm">
+                <button type="button" id="uploadShortcut">+</button>
+                <input
+                    id="question"
+                    type="text"
+                    placeholder="Ask about the raster..."
+                    autocomplete="off">
+                <button type="submit">↵</button>
+            </form>
+
+            <div class="input-note">
+                UPLOAD 1–2 IMAGES BEFORE QUERYING
+            </div>
+
+        </div>
+
+    </aside>    <!-- MAP -->
+    <main class="map-panel">
+
+        <div class="map-header">
+            EARTHQUERY &nbsp;//&nbsp; GEOSPATIAL CONSOLE
+        </div>
+        <div class="map-top-controls">
+            <button class="map-image-toggle" id="mapImageToggle" type="button"
+                    title="Show or hide raster overlay">IMAGE: ON</button>
+            <div class="map-opacity-control">
+                <div class="map-opacity-row">
+                    <span>IMAGE OPACITY</span>
+                    <input id="mapOpacitySlider" type="range" min="0" max="100" value="50"
+                           aria-label="Map image opacity">
+                    <span class="map-opacity-value" id="mapOpacityValue">50%</span>
+                </div>
+            </div>
+        </div>
+
+        <button class="theme-button" id="themeButton" title="Toggle theme">
+            ◐
+        </button>
+
+        <div id="map"></div>
+
+        <div class="map-status" id="mapStatus">
+            NO RASTER
+        </div>
+
+    </main>
+
+
+    <!-- LEFT PANEL -->
+    <aside class="left-panel">
+
+        <div class="brand">
+            <div class="brand-row">
+                <div class="brand-mark">EQ</div>
+                <div>
+                    <div class="brand-title">EARTHQUERY</div>
+                    <div class="brand-sub">REMOTE SENSING WORKSTATION // V6</div>
+                </div>
+            </div>
+        </div>
+
+        <div class="left-content">
+
+            <button class="new-analysis" id="newAnalysis">
+                [ + ] NEW ANALYSIS
+            </button>
+
+            <div class="section-label">IMAGE PREVIEW</div>
+
+            <div class="preview-box" id="previewBox">
+                <div class="preview-empty" id="previewEmpty">
+                    CLICK TO LOAD 1–2 RASTERS
+                </div>
+                <div id="previewList"></div>
+            </div>
+
+            <div class="section-label">INPUT QUEUE</div>
+
+            <div class="queue-box" id="queue">
+                <div class="queue-item">
+                    <span class="queue-number">01 /</span>
+                    NO IMAGE LOADED
+                </div>
+                <div class="queue-item">
+                    <span class="queue-number">02 /</span>
+                    PAIR SLOT AVAILABLE
+                </div>
+            </div>
+
+            <input id="fileInput" type="file"
+                   accept=".tif,.tiff,.png,.jpg,.jpeg"
+                   multiple>
+
+        </div>
+
+        <div class="footer">
+            EARTHQUERY AI // V6<br>
+            RASTER INGESTION / GEORFERENCE / AGENTIC ROUTING<br>
+            MODEL EXECUTION: AZURE OPENAI // ONLINE
+        </div>
+    </aside>
+
+
+
+
+</div>
+
+
+<div class="zoom-preview-layer" id="zoomPreviewLayer" aria-label="Zoomed raster preview">
+    <img id="zoomPreviewImage" class="zoom-preview-image" alt="Zoomed raster preview">
+    <button class="zoom-preview-close" id="zoomPreviewClose" type="button"
+            aria-label="Close zoomed preview">×</button>
+</div>
+
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+
+<script>
+    /*
+     * MAP CORE
+     * -------------------------------------------------
+     * Deliberately preserved from the supplied Simple Map.
+     * Satellite provider, centre and initial zoom are unchanged.
+     */
+
+    const map = L.map("map").setView([19.0760, 72.8777], 10);
+
+    const satellite = L.tileLayer(
+        "https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}",
+        {
+            attribution: "Tiles © Esri"
+        }
+    ).addTo(map);
+
+    /*
+     * EarthQuery backend integration
+     */
+
+    let sessionId = null;
+    let rasterOverlays = [];
+    let rasterVisible = true;
+    let mapOpacity = 0.50;
+    let zoomOpacity = 0.50;
+    let zoomProgress = 100;
+    let zoomAnimationFrame = null;
+    let activeZoomSource = null;
+    let activeZoomStart = null;
+    let activeZoomTarget = null;
+
+    function renderMarkdown(text) {
+        let source = String(text ?? "").replace(/\r\n/g, "\n").trim();
+
+        // Escape HTML first so model output cannot inject markup.
+        source = source
+            .replace(/&/g, "&amp;")
+            .replace(/</g, "&lt;")
+            .replace(/>/g, "&gt;")
+            .replace(/"/g, "&quot;")
+            .replace(/'/g, "&#039;");
+
+        // Fenced code blocks.
+        source = source.replace(
+            /```(?:[a-zA-Z0-9_+-]+)?\n?([\s\S]*?)```/g,
+            '<pre><code>$1</code></pre>'
+        );
+
+        // Headings.
+        source = source.replace(/^###\s+(.+)$/gm, "<h3>$1</h3>");
+        source = source.replace(/^##\s+(.+)$/gm, "<h2>$1</h2>");
+        source = source.replace(/^#\s+(.+)$/gm, "<h1>$1</h1>");
+
+        // Bold / italic / inline code.
+        source = source.replace(/\*\*(.+?)\*\*/g, "<strong>$1</strong>");
+        source = source.replace(/__(.+?)__/g, "<strong>$1</strong>");
+        source = source.replace(/(?<!\*)\*([^*\n]+)\*(?!\*)/g, "<em>$1</em>");
+        source = source.replace(/`([^`\n]+)`/g, "<code>$1</code>");
+
+        // Markdown unordered lists.
+        source = source.replace(
+            /^(?:[-*])\s+(.+)$/gm,
+            '<li>$1</li>'
+        );
+        source = source.replace(
+            /((?:<li>.*<\/li>\n?)+)/g,
+            "<ul>$1</ul>"
+        );
+
+        // Markdown ordered lists.
+        source = source.replace(
+            /^\d+\.\s+(.+)$/gm,
+            '<li>$1</li>'
+        );
+
+        // Markdown horizontal rules.
+        source = source.replace(/^\s*(?:---|\*\*\*)\s*$/gm, "<hr>");
+
+        // Preserve ordinary line breaks.
+        source = source.replace(/\n/g, "<br>");
+
+        // Remove <br> immediately around block elements.
+        source = source
+            .replace(/<br>\s*(<h[1-3]>)/g, "$1")
+            .replace(/(<\/h[1-3]>)\s*<br>/g, "$1")
+            .replace(/<br>\s*(<pre>)/g, "$1")
+            .replace(/(<\/pre>)\s*<br>/g, "$1")
+            .replace(/<br>\s*(<ul>)/g, "$1")
+            .replace(/(<\/ul>)\s*<br>/g, "$1")
+            .replace(/<br>\s*(<hr>)/g, "$1")
+            .replace(/(<hr>)\s*<br>/g, "$1");
+
+        return source;
+    }
+
+    function addMessage(text, type = "system") {
+        // The conversation area is intentionally limited to user queries
+        // and model replies. Upload/status/system messages stay out of chat.
+        if (type === "system") return;
+
+        const box = document.getElementById("conversation");
+        const message = document.createElement("div");
+        message.className = "message " + type;
+
+        if (type === "assistant") {
+            message.innerHTML = renderMarkdown(text);
+        } else {
+            message.textContent = text;
+        }
+
+        box.appendChild(message);
+        box.scrollTop = box.scrollHeight;
+    }
+
+    function showThinking() {
+        removeThinking();
+
+        const box = document.getElementById("conversation");
+        const message = document.createElement("div");
+        message.id = "thinkingMessage";
+        message.className = "message thinking";
+        message.innerHTML = `
+            <span>THINKING</span>
+            <span class="thinking-dots" aria-hidden="true">
+                <span></span><span></span><span></span>
+            </span>
+        `;
+        box.appendChild(message);
+        box.scrollTop = box.scrollHeight;
+    }
+
+    function removeThinking() {
+        document.getElementById("thinkingMessage")?.remove();
+    }
+
+    function setChatBusy(busy) {
+        const input = document.getElementById("question");
+        const sendButton = document.querySelector('#chatForm button[type="submit"]');
+
+        input.disabled = busy;
+        sendButton.disabled = busy;
+        sendButton.setAttribute("aria-disabled", String(busy));
+
+        if (!busy) input.focus();
+    }
+
+    function updateQueue(sources) {
+        const queue = document.getElementById("queue");
+
+        if (!sources || !sources.length) {
+            queue.innerHTML = `
+                <div class="queue-item">
+                    <span class="queue-number">01 /</span>
+                    NO IMAGE LOADED
+                </div>
+                <div class="queue-item">
+                    <span class="queue-number">02 /</span>
+                    PAIR SLOT AVAILABLE
+                </div>`;
+            return;
+        }
+
+        queue.innerHTML = sources.map((source, i) => `
+            <div class="queue-item">
+                <span class="queue-number">0${i + 1} /</span>
+                ${escapeHtml(source.filename)}
+            </div>
+        `).join("");
+
+        if (sources.length < 2) {
+            queue.innerHTML += `
+                <div class="queue-item">
+                    <span class="queue-number">02 /</span>
+                    PAIR SLOT AVAILABLE
+                </div>`;
+        }
+    }
+
+    function escapeHtml(value) {
+        return String(value)
+            .replaceAll("&", "&amp;")
+            .replaceAll("<", "&lt;")
+            .replaceAll(">", "&gt;")
+            .replaceAll('"', "&quot;")
+            .replaceAll("'", "&#039;");
+    }
+
+    function clearRasterOverlays() {
+        rasterOverlays.forEach(layer => map.removeLayer(layer));
+        rasterOverlays = [];
+    }
+
+    function leafletBoundsFromWgs84Corners(corners) {
+        /*
+         * The backend returns four WGS84 corner objects:
+         * [
+         *   { latitude, longitude },
+         *   { latitude, longitude },
+         *   { latitude, longitude },
+         *   { latitude, longitude }
+         * ]
+         *
+         * Leaflet imageOverlay needs the complete southwest /
+         * northeast bounding box. Compute it from all four corners.
+         */
+        if (!Array.isArray(corners) || corners.length < 4) {
+            return null;
+        }
+
+        const valid = corners.filter(
+            p => Number.isFinite(Number(p.latitude)) &&
+                 Number.isFinite(Number(p.longitude))
+        );
+
+        if (valid.length < 4) {
+            return null;
+        }
+
+        const latitudes = valid.map(p => Number(p.latitude));
+        const longitudes = valid.map(p => Number(p.longitude));
+
+        const south = Math.min(...latitudes);
+        const north = Math.max(...latitudes);
+        const west = Math.min(...longitudes);
+        const east = Math.max(...longitudes);
+
+        return [
+            [south, west],
+            [north, east]
+        ];
+    }
+
+    function addRasterOverlays(sources) {
+        clearRasterOverlays();
+
+        const allBounds = [];
+        let firstCentre = null;
+
+        for (const source of sources) {
+            const geo = source.map || {};
+            const corners = geo.bounds_wgs84;
+
+            if (!geo.georeferenced || !corners) {
+                continue;
+            }
+
+            const leafletBounds = leafletBoundsFromWgs84Corners(corners);
+
+            if (!leafletBounds) {
+                continue;
+            }
+
+            /*
+             * IMPORTANT:
+             * The complete rendered raster is placed over its complete
+             * georeferenced footprint. We do not place a centroid marker
+             * and we do not crop the preview.
+             */
+            if (source.preview_image) {
+                const overlay = L.imageOverlay(
+                    source.preview_image,
+                    leafletBounds,
+                    {
+                        opacity: rasterVisible ? mapOpacity : 0,
+                        interactive: false,
+                        crossOrigin: true
+                    }
+                ).addTo(map);
+
+                const border = L.rectangle(
+                    leafletBounds,
+                    {
+                        color: "#ff2b2b",
+                        weight: 2,
+                        opacity: 1,
+                        fill: false,
+                        interactive: false
+                    }
+                ).addTo(map);
+
+                rasterOverlays.push(overlay, border);
+                allBounds.push(leafletBounds);
+            }
+
+            if (!firstCentre && geo.center_wgs84) {
+                firstCentre = geo.center_wgs84;
+            }
+        }
+
+        /*
+         * After ingestion, show the actual raster footprint while retaining
+         * the same satellite basemap and Leaflet behaviour.
+         */
+        if (allBounds.length) {
+            const group = L.featureGroup(
+                rasterOverlays.filter(layer => layer.getBounds)
+            );
+
+            if (group.getLayers().length) {
+                map.fitBounds(group.getBounds(), {
+                    padding: [35, 35],
+                    maxZoom: 17
+                });
+            }
+        } else if (firstCentre) {
+            map.setView(
+                [Number(firstCentre.latitude), Number(firstCentre.longitude)],
+                Math.max(map.getZoom(), 10)
+            );
+        }
+    }
+
+    function updatePreview(sources) {
+        const box = document.getElementById("previewBox");
+        const empty = document.getElementById("previewEmpty");
+        const list = document.getElementById("previewList");
+
+        list.innerHTML = "";
+
+        if (!sources || !sources.length) {
+            empty.style.display = "grid";
+            return;
+        }
+
+        empty.style.display = "none";
+
+        for (const source of sources) {
+            if (!source.preview_image) continue;
+
+            const item = document.createElement("div");
+            item.className = "preview-item";
+
+            const image = document.createElement("img");
+            image.className = "preview-image";
+            image.src = source.preview_image;
+            image.alt = source.filename || "Raster preview";
+            image.title = "Click to zoom onto map";
+            image.addEventListener("click", event => {
+                event.stopPropagation();
+                openZoomPreview(source);
+            });
+
+            const name = document.createElement("div");
+            name.className = "preview-name";
+            name.textContent = source.filename || "Raster";
+
+            const opacityControl = document.createElement("div");
+            opacityControl.className = "preview-control";
+            const opacityRow = document.createElement("div");
+            opacityRow.className = "preview-control-row";
+            const opacityLabel = document.createElement("span");
+            opacityLabel.textContent = "PREVIEW OPACITY";
+            const opacityValue = document.createElement("span");
+            opacityValue.className = "preview-control-value";
+            opacityValue.textContent = "50%";
+            const opacitySlider = document.createElement("input");
+            opacitySlider.type = "range"; opacitySlider.min = "0"; opacitySlider.max = "100";
+            opacitySlider.value = "50"; opacitySlider.setAttribute("aria-label", "Preview opacity");
+            opacitySlider.addEventListener("click", event => event.stopPropagation());
+            opacitySlider.addEventListener("input", event => {
+                const value = Math.max(0, Math.min(100, Number(event.target.value)));
+                opacityValue.textContent = value + "%";
+                if (activeZoomSource === source) {
+                    zoomOpacity = value / 100;
+                    document.getElementById("zoomPreviewImage").style.opacity = zoomOpacity;
+                }
+            });
+            opacityRow.append(opacityLabel, opacityValue);
+            opacityControl.append(opacityRow, opacitySlider);
+
+            const zoomControl = document.createElement("div");
+            zoomControl.className = "preview-control";
+            const zoomRow = document.createElement("div");
+            zoomRow.className = "preview-control-row";
+            const zoomLabel = document.createElement("span");
+            zoomLabel.textContent = "ZOOM";
+            const zoomValue = document.createElement("span");
+            zoomValue.className = "preview-control-value";
+            zoomValue.textContent = "100%";
+            const zoomSlider = document.createElement("input");
+            zoomSlider.type = "range"; zoomSlider.min = "0"; zoomSlider.max = "100";
+            zoomSlider.value = "100"; zoomSlider.setAttribute("aria-label", "Preview zoom");
+            zoomSlider.addEventListener("click", event => event.stopPropagation());
+            zoomSlider.addEventListener("input", event => {
+                const value = Math.max(0, Math.min(100, Number(event.target.value)));
+                zoomValue.textContent = value + "%";
+                if (activeZoomSource === source) setZoomProgress(value);
+            });
+            zoomRow.append(zoomLabel, zoomValue);
+            zoomControl.append(zoomRow, zoomSlider);
+
+            item.append(image, name, opacityControl, zoomControl);
+            list.appendChild(item);
+
+            source._previewOpacitySlider = opacitySlider;
+            source._previewOpacityValue = opacityValue;
+            source._previewZoomSlider = zoomSlider;
+            source._previewZoomValue = zoomValue;
+        }
+
+        box.scrollTop = 0;
+    }
+
+    function getBoundsPixelRect(bounds) {
+        const mapRect = document.getElementById("map").getBoundingClientRect();
+        const nw = map.latLngToContainerPoint(L.latLng(bounds[1][0], bounds[0][1]));
+        const se = map.latLngToContainerPoint(L.latLng(bounds[0][0], bounds[1][1]));
+        return {
+            left: mapRect.left + Math.min(nw.x, se.x),
+            top: mapRect.top + Math.min(nw.y, se.y),
+            width: Math.abs(se.x - nw.x),
+            height: Math.abs(se.y - nw.y)
+        };
+    }
+
+    function easeInOutCubic(t) {
+        return t < 0.5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2, 3) / 2;
+    }
+
+    function cancelZoomAnimation() {
+        if (zoomAnimationFrame !== null) {
+            cancelAnimationFrame(zoomAnimationFrame);
+            zoomAnimationFrame = null;
+        }
+    }
+
+    function closeZoomPreview() {
+        cancelZoomAnimation();
+        activeZoomSource = null;
+        activeZoomStart = null;
+        activeZoomTarget = null;
+        document.getElementById("zoomPreviewLayer").classList.remove("open");
+        document.getElementById("zoomPreviewImage").src = "";
+    }
+
+    function renderZoomProgress(progress) {
+        if (!activeZoomStart || !activeZoomTarget) return;
+
+        const p = Math.max(0, Math.min(100, Number(progress))) / 100;
+        const eased = easeInOutCubic(p);
+        const image = document.getElementById("zoomPreviewImage");
+
+        const left = activeZoomStart.left + (activeZoomTarget.left - activeZoomStart.left) * eased;
+        const top = activeZoomStart.top + (activeZoomTarget.top - activeZoomStart.top) * eased;
+        const width = activeZoomStart.width + (activeZoomTarget.width - activeZoomStart.width) * eased;
+        const height = activeZoomStart.height + (activeZoomTarget.height - activeZoomStart.height) * eased;
+
+        image.style.left = left + "px";
+        image.style.top = top + "px";
+        image.style.width = Math.max(width, 1) + "px";
+        image.style.height = Math.max(height, 1) + "px";
+        image.style.opacity = zoomOpacity;
+
+        const closeButton = document.getElementById("zoomPreviewClose");
+        const mapRect = document.getElementById("map").getBoundingClientRect();
+        const desiredLeft = left + width + 8;
+        const safeLeft = Math.min(desiredLeft, mapRect.right - 38);
+        closeButton.style.left = Math.max(mapRect.left + 4, safeLeft) + "px";
+        closeButton.style.top = Math.max(mapRect.top + 4, top + 8) + "px";
+
+        zoomProgress = Math.round(Number(progress));
+
+        if (activeZoomSource) {
+            if (activeZoomSource._previewZoomSlider) activeZoomSource._previewZoomSlider.value = zoomProgress;
+            if (activeZoomSource._previewZoomValue) activeZoomSource._previewZoomValue.textContent = zoomProgress + "%";
+            if (activeZoomSource._previewOpacitySlider) activeZoomSource._previewOpacitySlider.value = Math.round(zoomOpacity * 100);
+            if (activeZoomSource._previewOpacityValue) activeZoomSource._previewOpacityValue.textContent = Math.round(zoomOpacity * 100) + "%";
+        }
+    }
+
+    function setZoomProgress(progress) {
+        cancelZoomAnimation();
+        renderZoomProgress(progress);
+    }
+
+    function animateZoomToTarget() {
+        cancelZoomAnimation();
+        const duration = 3000;
+        const started = performance.now();
+
+        function animate(now) {
+            if (!activeZoomSource) return;
+            const progress = Math.min((now - started) / duration, 1);
+            renderZoomProgress(100 * easeInOutCubic(progress));
+            if (progress < 1) zoomAnimationFrame = requestAnimationFrame(animate);
+            else { zoomAnimationFrame = null; zoomProgress = 100; }
+        }
+        zoomAnimationFrame = requestAnimationFrame(animate);
+    }
+
+    function openZoomPreview(source) {
+        if (!source || !source.preview_image) return;
+
+        const bounds = leafletBoundsFromWgs84Corners((source.map || {}).bounds_wgs84);
+        if (!bounds) return;
+
+        cancelZoomAnimation();
+        activeZoomSource = source;
+
+        const layer = document.getElementById("zoomPreviewLayer");
+        const image = document.getElementById("zoomPreviewImage");
+        image.src = source.preview_image;
+        image.style.opacity = zoomOpacity;
+        layer.classList.add("open");
+
+        const start = getBoundsPixelRect(bounds);
+        const mapRect = document.getElementById("map").getBoundingClientRect();
+        const padding = Math.max(18, Math.min(60, Math.min(mapRect.width, mapRect.height) * 0.04));
+        const maxTargetWidth = Math.max(80, mapRect.width - padding * 2);
+        const maxTargetHeight = Math.max(80, mapRect.height - padding * 2);
+        const aspect = Math.max(start.width / Math.max(start.height, 1), 0.1);
+
+        let targetWidth = Math.min(mapRect.width * 0.72, 900, maxTargetWidth);
+        let targetHeight = targetWidth / aspect;
+        if (targetHeight > maxTargetHeight) {
+            targetHeight = maxTargetHeight;
+            targetWidth = targetHeight * aspect;
+        }
+
+        targetWidth = Math.max(80, targetWidth);
+        targetHeight = Math.max(80, targetHeight);
+
+        activeZoomStart = {
+            left: start.left, top: start.top,
+            width: Math.max(start.width, 1), height: Math.max(start.height, 1)
+        };
+        activeZoomTarget = {
+            left: mapRect.left + (mapRect.width - targetWidth) / 2,
+            top: mapRect.top + (mapRect.height - targetHeight) / 2,
+            width: targetWidth, height: targetHeight
+        };
+
+        zoomProgress = 0;
+        renderZoomProgress(0);
+        animateZoomToTarget();
+    }
+
+    async function uploadFiles(files) {
+        if (!files.length) return;
+
+        if (files.length > 2) {
+            addMessage("Maximum two rasters are supported.", "system");
+            return;
+        }
+
+        const form = new FormData();
+
+        for (const file of files) {
+            form.append("files", file);
+        }
+
+        try {
+            const response = await fetch("/upload", {
+                method: "POST",
+                body: form
+            });
+
+            const data = await response.json();
+
+            if (!response.ok) {
+                throw new Error(data.detail || "Upload failed.");
+            }
+
+            sessionId = data.session_id;
+
+            updateQueue(data.sources);
+            addRasterOverlays(data.sources);
+
+            document.getElementById("mapStatus").textContent =
+                data.source_count + " RASTER" +
+                (data.source_count === 1 ? "" : "S") +
+                " LOADED";
+
+            updatePreview(data.sources);
+
+            addMessage(
+                "Raster ingestion complete. Full georeferenced image footprint loaded for " +
+                data.source_count +
+                " source" +
+                (data.source_count === 1 ? "" : "s") +
+                " ready for querying.",
+                "system"
+            );
+
+        } catch (error) {
+            addMessage(
+                "Upload error: " + error.message,
+                "system"
+            );
+        }
+    }
+
+    async function askQuestion(question) {
+        if (!sessionId) {
+            addMessage("Upload a raster image first.", "notice");
+            return;
+        }
+
+        if (!question.trim()) return;
+
+        const trimmedQuestion = question.trim();
+        addMessage(trimmedQuestion, "user");
+        showThinking();
+        setChatBusy(true);
+
+        const form = new FormData();
+        form.append("session_id", sessionId);
+        form.append("question", trimmedQuestion);
+
+        try {
+            const response = await fetch("/ask", {
+                method: "POST",
+                body: form
+            });
+
+            const data = await response.json();
+
+            if (!response.ok) {
+                throw new Error(data.detail || "Query failed.");
+            }
+
+            removeThinking();
+            addMessage(data.answer, "assistant");
+
+        } catch (error) {
+            removeThinking();
+            addMessage(
+                "Query error: " + error.message,
+                "assistant"
+            );
+        } finally {
+            setChatBusy(false);
+        }
+    }
+
+    async function resetAnalysis() {
+        if (sessionId) {
+            const form = new FormData();
+            form.append("session_id", sessionId);
+
+            try {
+                await fetch("/reset", {
+                    method: "POST",
+                    body: form
+                });
+            } catch (_) {}
+        }
+
+        sessionId = null;
+        clearRasterOverlays();
+        updateQueue([]);
+        updatePreview([]);
+        document.getElementById("mapStatus").textContent =
+            "NO RASTER";
+        document.getElementById("conversation").innerHTML = "";
+        removeThinking();
+        setChatBusy(false);
+        rasterVisible = true;
+        mapOpacity = 0.50;
+        zoomOpacity = 0.50;
+        zoomProgress = 100;
+        document.getElementById("mapImageToggle").textContent = "IMAGE: ON";
+        document.getElementById("mapOpacitySlider").value = 50;
+        document.getElementById("mapOpacityValue").textContent = "50%";
+        closeZoomPreview();
+    }
+
+    /*
+     * File upload controls
+     */
+
+    document.getElementById("fileInput").addEventListener("change", event => {
+        uploadFiles([...event.target.files]);
+        event.target.value = "";
+    });
+
+    document.getElementById("uploadShortcut").addEventListener("click", () => {
+        document.getElementById("fileInput").click();
+    });
+
+    document.getElementById("previewBox").addEventListener("click", event => {
+        if (event.target.closest(".preview-image, .preview-control")) return;
+        document.getElementById("fileInput").click();
+    });
+
+    document.getElementById("newAnalysis").addEventListener("click", () => {
+        resetAnalysis();
+    });
+
+    /*
+     * Chat
+     */
+
+    document.getElementById("chatForm").addEventListener("submit", event => {
+        event.preventDefault();
+
+        const input = document.getElementById("question");
+        const question = input.value;
+
+        input.value = "";
+
+        askQuestion(question);
+    });
+
+    /*
+     * Chat text size
+     */
+
+    const textSizeSlider = document.getElementById("textSizeSlider");
+    const textSizeValue = document.getElementById("textSizeValue");
+
+    textSizeSlider.addEventListener("input", event => {
+        const scale = Math.max(50, Math.min(150, Number(event.target.value)));
+        const size = 8.5 * (scale / 100);
+
+        document.documentElement.style.setProperty(
+            "--chat-text-size",
+            size + "px"
+        );
+
+        textSizeValue.textContent = scale + "%";
+    });
+
+    /*
+     * Theme
+     * The map tiles themselves are deliberately NOT modified.
+     */
+
+    const themeButton = document.getElementById("themeButton");
+
+    themeButton.addEventListener("click", () => {
+        document.body.classList.toggle("light");
+
+        localStorage.setItem(
+            "earthquery-theme",
+            document.body.classList.contains("light")
+                ? "light"
+                : "dark"
+        );
+    });
+
+    if (localStorage.getItem("earthquery-theme") === "light") {
+        document.body.classList.add("light");
+    }
+
+
+    /*
+     * Draggable map / chat partition
+     * --------------------------------
+     * The map remains a real Leaflet map. Only the width of the right
+     * chat column changes. The left workstation column never overlaps it.
+     */
+
+    const resizeHandle = document.getElementById("resizeHandle");
+    const root = document.documentElement;
+
+    let resizing = false;
+
+    resizeHandle.addEventListener("pointerdown", event => {
+        resizing = true;
+        resizeHandle.setPointerCapture(event.pointerId);
+        document.body.classList.add("resizing");
+        event.preventDefault();
+    });
+
+    resizeHandle.addEventListener("pointermove", event => {
+        if (!resizing) return;
+
+        const chatWidth = Math.min(
+            720,
+            Math.max(300, event.clientX)
+        );
+
+        root.style.setProperty(
+            "--right-width",
+            chatWidth + "px"
+        );
+
+        requestAnimationFrame(() => map.invalidateSize(false));
+    });
+
+    function stopResize(event) {
+        if (!resizing) return;
+
+        resizing = false;
+        document.body.classList.remove("resizing");
+
+        try {
+            resizeHandle.releasePointerCapture(event.pointerId);
+        } catch (_) {}
+
+        map.invalidateSize(false);
+    }
+
+    resizeHandle.addEventListener("pointerup", stopResize);
+    resizeHandle.addEventListener("pointercancel", stopResize);
+
+    /*
+     * Keep the map correctly sized after the window changes.
+     */
+    window.addEventListener("resize", () => {
+        requestAnimationFrame(() => map.invalidateSize(false));
+    });
+
+
+    /*
+     * Raster visibility and opacity controls
+     */
+    document.getElementById("mapImageToggle").addEventListener("click", () => {
+        rasterVisible = !rasterVisible;
+        rasterOverlays.forEach(layer => {
+            if (layer instanceof L.ImageOverlay) {
+                layer.setOpacity(rasterVisible ? mapOpacity : 0);
+            } else if (layer.setOpacity) {
+                layer.setOpacity(rasterVisible ? 1 : 0);
+            }
+        });
+        document.getElementById("mapImageToggle").textContent =
+            rasterVisible ? "IMAGE: ON" : "IMAGE: OFF";
+    });
+
+    document.getElementById("mapOpacitySlider").addEventListener("input", event => {
+        const value = Math.max(0, Math.min(100, Number(event.target.value)));
+        mapOpacity = value / 100;
+        document.getElementById("mapOpacityValue").textContent = value + "%";
+        rasterOverlays.forEach(layer => {
+            if (layer instanceof L.ImageOverlay) {
+                layer.setOpacity(rasterVisible ? mapOpacity : 0);
+            }
+        });
+    });
+
+    document.getElementById("zoomPreviewClose").addEventListener("click", closeZoomPreview);
+
+    document.addEventListener("keydown", event => {
+        if (event.key === "Escape") closeZoomPreview();
+    });
+
+    updatePreview([]);
+</script>
+
+</body>
+</html>
