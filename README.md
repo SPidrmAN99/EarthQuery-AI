@@ -2,6 +2,44 @@
 
 EarthQuery v6 is the map-first remote-sensing workstation requested for the current SatQuery/EarthQuery build.
 
+## Product walkthrough
+
+Explore EarthQuery’s map-first workflow: analyze a single raster, compare two georeferenced images, inspect image previews, and adjust raster overlays on the map. Select any screenshot to view it at full size.
+
+<table>
+  <tr>
+    <td width="50%" valign="top">
+      <a href="docs/images/demo/single-image-analysis.png"><img src="docs/images/demo/single-image-analysis.png" alt="EarthQuery analyzing a single satellite image on the map" width="100%" /></a>
+      <p align="center"><strong>Ask questions about a single raster</strong><br />The answer is paired with the image’s mapped footprint.</p>
+    </td>
+    <td width="50%" valign="top">
+      <a href="docs/images/demo/two-raster-map.png"><img src="docs/images/demo/two-raster-map.png" alt="Two raster locations displayed in the EarthQuery map view" width="100%" /></a>
+      <p align="center"><strong>Load and compare two locations</strong><br />View both raster footprints together in the geospatial console.</p>
+    </td>
+  </tr>
+  <tr>
+    <td width="50%" valign="top">
+      <a href="docs/images/demo/raster-detail-preview.png"><img src="docs/images/demo/raster-detail-preview.png" alt="Expanded raster preview in EarthQuery" width="100%" /></a>
+      <p align="center"><strong>Inspect raster details</strong><br />Open a larger preview while keeping the map in context.</p>
+    </td>
+    <td width="50%" valign="top">
+      <a href="docs/images/demo/location-comparison-answer.png"><img src="docs/images/demo/location-comparison-answer.png" alt="EarthQuery response comparing two raster locations" width="100%" /></a>
+      <p align="center"><strong>Get a geospatial comparison</strong><br />The assistant summarizes location and image differences.</p>
+    </td>
+  </tr>
+  <tr>
+    <td width="50%" valign="top">
+      <a href="docs/images/demo/raster-overlay-comparison.png"><img src="docs/images/demo/raster-overlay-comparison.png" alt="Raster overlays and opacity controls in EarthQuery" width="100%" /></a>
+      <p align="center"><strong>Compare overlays on the map</strong><br />Use opacity controls to inspect raster coverage against the basemap.</p>
+    </td>
+    <td width="50%" valign="top">
+      <p align="center"><strong>Built for geospatial exploration</strong><br />Upload one or two images, ask a question, and inspect the evidence in one workspace.</p>
+    </td>
+  </tr>
+</table>
+
+---
+
 ## v6 behaviour
 
 - v6 retains the previous map-first remote-sensing workstation UI and geospatial raster ingestion.
